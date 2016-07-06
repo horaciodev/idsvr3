@@ -32,6 +32,7 @@ namespace HostedIdentityServer
                 new Client
                 {
                     ClientId = "main-website",
+                    ClientName = "Main Website",
                     ClientSecrets = new List<Secret>
                     {
                         new Secret("mainwebsites3cret".Sha256())

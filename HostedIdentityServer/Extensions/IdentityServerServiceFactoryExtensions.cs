@@ -12,11 +12,12 @@ namespace IdentityServer3.Core.Configuration
 {
     public static class IdentityServerServiceFactoryExtensions
     {
-        public static IdentityServerServiceFactory Configure(this IdentityServerServiceFactory factory, string connStr, string userBaseConnStr)
-        {
-            var serviceOptions = new EntityFrameworkServiceOptions { ConnectionString = connStr };
+        public static IdentityServerServiceFactory Configure(this IdentityServerServiceFactory factory,
+                                                                EntityFrameworkServiceOptions serviceOptions,
+                                                                string userBaseConnStr)
+        { 
             factory.RegisterOperationalServices(serviceOptions);
-            factory.RegisterConfigurationServices(serviceOptions);
+            factory.RegisterConfigurationServices(serviceOptions); //which one goes first?
 
             factory.Register(new Registration<Context>(resolver => new Context(userBaseConnStr)));
             factory.Register(new Registration<UserStore>());
