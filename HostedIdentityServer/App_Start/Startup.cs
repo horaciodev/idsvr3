@@ -5,8 +5,12 @@ using System.Web;
 
 using Owin;
 using IdentityServer3.Core.Configuration;
+using Microsoft.Owin;
 using System.Security.Cryptography.X509Certificates;
 using System.Configuration;
+
+
+[assembly: OwinStartup(typeof(HostedIdentityServer.Startup))]
 
 namespace HostedIdentityServer
 {
@@ -15,11 +19,16 @@ namespace HostedIdentityServer
         public void Configuration(IAppBuilder app)
         {
             string connStr = ConfigurationManager.ConnectionStrings["idSvrConnStr"].ConnectionString;
+            string usrBaseConnString = ConfigurationManager.ConnectionStrings["idSvrUserBaseConnStr"].ConnectionString;
+
+            var inMemoryManager = new InMemoryManager(); //to be used later
+
             app.Map("/identity", id =>
             {
                 id.UseIdentityServer( new IdentityServerOptions { SiteName = "ASPNET MVC Hosted Identity Server3",
                                                                   SigningCertificate = LoadCertFromStore(),
-                                                                  Factory = new IdentityServerServiceFactory().Configure(connStr)
+                                                                  RequireSsl = true,
+                                                                  Factory = new IdentityServerServiceFactory().Configure(connStr,usrBaseConnString)
                 });
             });
         }
