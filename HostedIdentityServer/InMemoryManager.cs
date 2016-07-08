@@ -6,6 +6,8 @@ using System.Web;
 using IdentityServer3.Core;
 using IdentityServer3.Core.Models;
 
+using HostedIdentityServer.Common;
+
 namespace HostedIdentityServer
 {
     public class InMemoryManager
@@ -19,8 +21,10 @@ namespace HostedIdentityServer
                StandardScopes.OfflineAccess, //this one is to be able to request a refresh token
                new Scope                    //this is custom Scope
                {
-                   Name = "sysop",
-                   DisplayName = "SysOp Read-Only Admin"
+                   Name = "MainWebsiteAccess",
+                   DisplayName = "Main Website Access",
+                   Description = "Allow access to main website",
+                   Type = ScopeType.Resource
                }
             };
         }
@@ -33,16 +37,23 @@ namespace HostedIdentityServer
                 {
                     ClientId = "main-website",
                     ClientName = "Main Website",
+                    /*
                     ClientSecrets = new List<Secret>
                     {
                         new Secret("mainwebsites3cret".Sha256())
+                    },*/
+                    Flow = Flows.Hybrid,
+                    RedirectUris = new List<string>
+                    {
+                        Common.Constants.MAIN_WEBSITE_REDIRECT_URI
                     },
-                    Flow = Flows.ResourceOwner,
                     AllowedScopes = new List<string>
                     {
-                        Constants.StandardScopes.OpenId
+                        IdentityServer3.Core.Constants.StandardScopes.OpenId,
+                        IdentityServer3.Core.Constants.StandardScopes.Profile
                     },
-                    Enabled = true
+                    Enabled = true,
+                    RequireConsent = false
                 }
             };
         }
