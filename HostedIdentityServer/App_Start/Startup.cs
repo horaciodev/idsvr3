@@ -12,6 +12,7 @@ using IdentityServer3.Core.Configuration;
 //using IdentityServer3.EntityFramework.Entities;
 using IdentityServer3.EntityFramework;
 using IdentityServer3.Core.Models;
+using IdentityManager.Configuration;
 
 [assembly: OwinStartup(typeof(HostedIdentityServer.Startup))]
 
@@ -40,6 +41,14 @@ namespace HostedIdentityServer
                                                                   SigningCertificate = LoadCertFromStore(),
                                                                   RequireSsl = true,
                                                                   Factory = new IdentityServerServiceFactory().Configure(serviceOptions,usrBaseConnString)
+                });
+            });
+
+            app.Map("/admin", adminApp =>
+            {
+                adminApp.UseIdentityManager(new IdentityManager.Configuration.IdentityManagerOptions()
+                {
+                    Factory = new IdentityManagerServiceFactory().Configure(usrBaseConnString)
                 });
             });
         }

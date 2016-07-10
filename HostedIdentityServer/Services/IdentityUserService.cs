@@ -8,7 +8,7 @@ using Microsoft.AspNet.Identity.EntityFramework;
 
 namespace HostedIdentityServer.Services
 {
-    public class IdentityUserService: AspNetIdentityUserService<IdentityUser, string>
+    public class IdentityUserService: AspNetIdentityUserService<User, string>
     {
         public IdentityUserService(UserManager usrMgr): base(usrMgr) { }
     }

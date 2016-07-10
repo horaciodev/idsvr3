@@ -1,15 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Web;
 
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
+using IdentityServer3.Core;
+
 
 namespace HostedIdentityServer
 {
-    public class Context: IdentityDbContext<IdentityUser,
-                                            IdentityRole, 
+    public class User: IdentityUser
+    {
+        public string FirstName { get; set; }
+
+        public string LastName { get; set; }
+
+    }
+
+    public class Context: IdentityDbContext<User,
+                                            Role, 
                                             string, 
                                             IdentityUserLogin, 
                                             IdentityUserRole, 
@@ -18,8 +29,10 @@ namespace HostedIdentityServer
         public Context(string connString) : base(connString) { }
     }
 
-    public class UserStore: UserStore<IdentityUser,
-                                        IdentityRole, 
+    public class Role : IdentityRole { }
+
+    public class UserStore: UserStore<User,
+                                        Role, 
                                         string, 
                                         IdentityUserLogin, 
                                         IdentityUserRole, 
@@ -28,18 +41,45 @@ namespace HostedIdentityServer
         public UserStore(Context ctx) : base(ctx) { }
     }
 
-    public class RoleStore: RoleStore<IdentityRole>
+    public class RoleStore: RoleStore<Role>
     {
         public RoleStore(Context ctx) : base(ctx) { }
     }
 
-    public class UserManager : UserManager<IdentityUser, string>
+    public class UserManager : UserManager<User, string>
     {
-        public UserManager(UserStore userStore) : base(userStore) { }
+        public UserManager(UserStore userStore) : base(userStore)
+        {
+            this.ClaimsIdentityFactory = new ClaimsFactory();
+        }
     }
 
-    public class RoleManager: RoleManager<IdentityRole>
+    public class RoleManager: RoleManager<Role>
     {
         public RoleManager(RoleStore roleStore) : base(roleStore) { }
+    }
+
+    public class ClaimsFactory: ClaimsIdentityFactory<User,string>
+    {
+        public ClaimsFactory()
+        {
+            this.UserIdClaimType = IdentityServer3.Core.Constants.ClaimTypes.Subject;
+            this.UserNameClaimType = IdentityServer3.Core.Constants.ClaimTypes.PreferredUserName;
+            this.RoleClaimType = IdentityServer3.Core.Constants.ClaimTypes.Role;
+        }
+
+        public override async System.Threading.Tasks.Task<ClaimsIdentity> CreateAsync(UserManager<User, string> manager, User user, string authenticationType)
+        {
+            var ci = await base.CreateAsync(manager, user, authenticationType);
+            if (!String.IsNullOrWhiteSpace(user.FirstName))
+            {
+                ci.AddClaim(new Claim("given_name", user.FirstName));
+            }
+            if (!String.IsNullOrWhiteSpace(user.LastName))
+            {
+                ci.AddClaim(new Claim("family_name", user.LastName));
+            }
+            return ci;
+        }
     }
 }
