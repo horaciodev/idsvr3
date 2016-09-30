@@ -4,9 +4,12 @@ using Microsoft.Owin;
 using Microsoft.Owin.Security.Cookies;
 using Microsoft.Owin.Security.OpenIdConnect;
 using Owin;
+using System.Collections.Generic;
 
 
 using HostedIdentityServer.Common;
+using System.Web.Helpers;
+using System.IdentityModel.Tokens;
 
 
 [assembly: OwinStartup(typeof(MVC.Main.Client.Startup))]
@@ -19,6 +22,9 @@ namespace MVC.Main.Client
         {
             // For more information on how to configure your application, visit http://go.microsoft.com/fwlink/?LinkID=316888
 
+            AntiForgeryConfig.UniqueClaimTypeIdentifier = "sub";
+            JwtSecurityTokenHandler.InboundClaimTypeMap = new Dictionary<string, string>();
+
             app.UseCookieAuthentication(new CookieAuthenticationOptions
             {
                 AuthenticationType = "Cookies"
@@ -26,21 +32,20 @@ namespace MVC.Main.Client
 
             app.UseOpenIdConnectAuthentication(new OpenIdConnectAuthenticationOptions
             {
-                ClientId = "main-website",                
+                ClientId = "mainwebsite",                
                 Authority = Constants.PRIMARY_AUTHORIZATION_SERVER_URI,
                 RedirectUri = Constants.MAIN_WEBSITE_REDIRECT_URI,
-                SignInAsAuthenticationType = "Cookies",
-                ResponseType = "code id_token",
-                Scope = "openid profile"
-                /*
-                Notifications = new OpenIdConnectAuthenticationNotifications()
+                PostLogoutRedirectUri = Constants.MAIN_WEBSITE_POST_LOGOUT_URI,
+                ResponseType = "code id_token token",
+                Scope = "openid profile email roles offline_access",
+                TokenValidationParameters = new TokenValidationParameters
                 {
-                    SecurityTokenValidated = async n=>
-                    {
-                        Microsoft.Owin.Helpers.TokenHelper
-                    }
-                }
-                */
+                    NameClaimType = "name",
+                    RoleClaimType = "role"
+                },
+                ClientSecret = "secret",
+                SignInAsAuthenticationType = "Cookies",
+
             });
         }
     }

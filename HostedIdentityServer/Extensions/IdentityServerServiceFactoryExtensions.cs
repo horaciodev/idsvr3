@@ -7,6 +7,7 @@ using IdentityServer3.Core.Services;
 using IdentityServer3.EntityFramework;
 using HostedIdentityServer;
 using HostedIdentityServer.Services;
+using IdentityServer3.Core.Services.Default;
 
 namespace IdentityServer3.Core.Configuration
 {
@@ -23,6 +24,8 @@ namespace IdentityServer3.Core.Configuration
             factory.Register(new Registration<UserStore>());
             factory.Register(new Registration<UserManager>());
             factory.UserService = new Registration<IUserService, IdentityUserService>();
+
+            factory.CorsPolicyService = new Registration<ICorsPolicyService>(new DefaultCorsPolicyService { AllowAll = true });
 
             return factory;
         }

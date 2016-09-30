@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Owin;
 using System.Security.Cryptography.X509Certificates;
@@ -13,6 +14,8 @@ using IdentityServer3.Core.Configuration;
 using IdentityServer3.EntityFramework;
 using IdentityServer3.Core.Models;
 using IdentityManager.Configuration;
+using Serilog;
+
 
 [assembly: OwinStartup(typeof(HostedIdentityServer.Startup))]
 
@@ -51,6 +54,11 @@ namespace HostedIdentityServer
                     Factory = new IdentityManagerServiceFactory().Configure(usrBaseConnString)
                 });
             });
+
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.Trace()
+                .CreateLogger();
         }
 
         //private X509Certificate2 LoadCertificate()
@@ -70,23 +78,41 @@ namespace HostedIdentityServer
         private X509Certificate2 LoadCertFromStore()
         {
             X509Certificate2 x509Cert = null;
-            X509Store certStore = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-
-            var certThumbPrint = ConfigurationManager.AppSettings["signing-certificate-thumbprint"];
-
-            certStore.Open(OpenFlags.ReadOnly);
-
-            var certCollection = certStore.Certificates.Find(X509FindType.FindByThumbprint, certThumbPrint, true);
-
-            certStore.Close();
-
-            if(0 == certCollection.Count)
+            X509Store certStore = null; 
+            try
             {
-                throw new Exception("No certificate was found containing specified thumbprint");
-            }
+                certStore = new X509Store(StoreName.My, StoreLocation.LocalMachine);
 
-            x509Cert = new X509Certificate2(certCollection[0].GetRawCertData(),
-                                            (string)ConfigurationManager.AppSettings["signing-certificate.password"]);
+                var certThumbPrint = ConfigurationManager.AppSettings["signing-certificate-thumbprint"];
+
+                certStore.Open(OpenFlags.ReadOnly);
+
+                var certCollection = certStore.Certificates.Find(X509FindType.FindByThumbprint, certThumbPrint, false);
+
+
+
+                if (0 == certCollection.Count)
+                {
+                    throw new Exception("No certificate was found containing specified thumbprint");
+                }
+                string certPwd = (string)ConfigurationManager.AppSettings["signing-certificate.password"];
+
+                byte[] certBytes = certCollection[0].Export(X509ContentType.Pkcs12, certPwd);
+
+                x509Cert = new X509Certificate2(certBytes, certPwd
+                                                , X509KeyStorageFlags.MachineKeySet);
+
+                
+            }
+            //catch
+            //{
+            //    Log.Information("Failed to load certificate from store");
+            //}
+            finally
+            {
+                
+                certStore.Close();
+            }
 
             return x509Cert;
         }
